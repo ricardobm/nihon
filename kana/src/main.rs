@@ -1,5 +1,18 @@
 fn main() {
-    for it in kana::WORDS.iter().take(20) {
+    let set = kana::build_set(kana::SET_ALL_RARE, 500);
+
+    println!(
+        "\nLoaded {} words with {} chars\n",
+        set.words.len(),
+        set.chars
+    );
+
+    if set.missing.len() > 0 {
+        let missing: Vec<_> = set.missing.iter().map(|x| x.to_string()).collect();
+        println!("Missing: {}\n", missing.join(" "));
+    }
+
+    for it in set.words.iter() {
         println!("{} - {}", it.word, it.count);
     }
 }

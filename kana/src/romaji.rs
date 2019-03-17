@@ -154,6 +154,7 @@ mod tests {
     fn test_is_match() {
         assert!(is_match("", ""));
         assert!(is_match("abc", "abc"));
+        assert!(is_match("abc", "ABC"));
         assert!(is_match("[あ]", "[a]"));
         assert!(is_match("あいうえお", "aiueo"));
         assert!(is_match("アイウエオ", "aiueo"));

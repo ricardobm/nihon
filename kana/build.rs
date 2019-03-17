@@ -20,7 +20,7 @@ fn main() {
         }
 
         let mut iter = line.split(",").skip(1);
-        let word = iter.next().unwrap();
+        let word = iter.next().unwrap().trim();
         let occurrences = iter.next().unwrap().parse::<i32>().unwrap();
         write!(&mut f, "\t(\"{}\", {}),\n", word, occurrences).unwrap();
     }
