@@ -196,21 +196,38 @@ pub static KATAKANA: &[MappingRow] = &[
 pub type DigraphRow = (&'static str, &'static str);
 
 pub static DIGRAPH: &[DigraphRow] = &[
-    // sh
+    // I
+    ("イェ", "ye"),
+    // KW
+    ("クァ", "kwa"),
+    ("クィ", "kwi"),
+    ("クェ", "kwe"),
+    ("クォ", "kwo"),
+    // G
+    ("グァ", "gwa"),
+    // SH
     ("シェ", "she"),
     // J
     ("ジェ", "je"),
     // T
     ("ティ", "ti"),
     ("トゥ", "tu"),
+    ("テュ", "tyu"),
+    // TS
+    ("ツァ", "tsa"),
+    ("ツィ", "tsi"),
+    ("ツェ", "tse"),
+    ("ツォ", "tso"),
     // D
     ("ディ", "di"),
+    ("デュ", "dyu"),
     ("ドゥ", "du"),
     // CH
     ("チェ", "che"),
     // F
     ("ファ", "fa"),
     ("フィ", "fi"),
+    ("フュ", "fyu"),
     ("フェ", "fe"),
     ("フォ", "fo"),
     // W

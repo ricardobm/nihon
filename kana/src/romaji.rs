@@ -124,7 +124,7 @@ pub fn to_romaji(input: &str) -> String {
                 out.push_str(&romaji[1..])
             }
         } else if romaji != "" {
-            out.push_str(romaji);
+            out.push_str(romaji.as_str());
         } else {
             out.push(chr);
         }
@@ -137,10 +137,16 @@ pub fn to_romaji(input: &str) -> String {
     out
 }
 
-fn kana_to_romaji(chr: char) -> &'static str {
+fn kana_to_romaji(chr: char) -> String {
     match KANA_MAP.get(&chr) {
-        Some(&s) => s,
-        None => "",
+        Some(&s) => String::from(s),
+        None => {
+            if chr >= 'a' && chr <= 'z' {
+                chr.to_string()
+            } else {
+                String::new()
+            }
+        }
     }
 }
 
@@ -295,5 +301,45 @@ mod tests {
             to_romaji("アーイーウーエーオー シー シャー ンー xー"),
             "āīūēō shī shā n̄ x-"
         )
+    }
+
+    #[test]
+    fn test_to_romaji_random_words() {
+        assert_eq!(to_romaji("パーティー"), "pātī");
+        assert_eq!(to_romaji("ディスク"), "disuku");
+        assert_eq!(to_romaji("ファッション"), "fasshon");
+        assert_eq!(to_romaji("フィクション"), "fikushon");
+        assert_eq!(to_romaji("シェルター"), "sherutā");
+        assert_eq!(to_romaji("ジェスチャー"), "jesuchā");
+        assert_eq!(to_romaji("ハロウィーン"), "harowīn");
+        assert_eq!(to_romaji("ソフトウェア"), "sofutowea");
+        assert_eq!(to_romaji("フォーク"), "fōku");
+        assert_eq!(to_romaji("フェア"), "fea");
+        assert_eq!(to_romaji("チェス"), "chesu");
+        assert_eq!(to_romaji("デュエット"), "dyuetto");
+        assert_eq!(to_romaji("ストップウォッチ"), "sutoppuwotchi");
+        assert_eq!(to_romaji("イェイ"), "yei");
+        assert_eq!(to_romaji("タトゥ"), "tatu");
+        assert_eq!(to_romaji("クォーツ"), "kwōtsu");
+        assert_eq!(to_romaji("クォーク"), "kwōku");
+        assert_eq!(to_romaji("モーツァルト"), "mōtsaruto");
+        assert_eq!(to_romaji("プレッツェル"), "purettseru");
+        assert_eq!(to_romaji("インテルメッツォ"), "interumettso");
+        assert_eq!(to_romaji("フューチャー"), "fyūchā");
+        assert_eq!(to_romaji("ヴァイオリン"), "vaiorin");
+        assert_eq!(to_romaji("ヴィーナス"), "vīnasu");
+        assert_eq!(to_romaji("ラヴ"), "ravu");
+        assert_eq!(to_romaji("ベートーヴェン"), "bētōven");
+        assert_eq!(to_romaji("ヴォーカリスト"), "vōkarisuto");
+        assert_eq!(
+            to_romaji("ドゥーイットユアセルフ"),
+            "dūittoyuaserufu"
+        );
+        assert_eq!(to_romaji("エスクァイア"), "esukwaia");
+        assert_eq!(to_romaji("クィントゥス"), "kwintusu");
+        assert_eq!(to_romaji("クェンティン"), "kwentin");
+        assert_eq!(to_romaji("グァンタナモ"), "gwantanamo");
+        assert_eq!(to_romaji("ツィンメルマン"), "tsinmeruman");
+        assert_eq!(to_romaji("テューリンゲン"), "tyūringen");
     }
 }
