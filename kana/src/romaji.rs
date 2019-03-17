@@ -25,6 +25,26 @@ lazy_static! {
     };
 }
 
+pub fn is_match(kana: &str, s: &str) -> bool {
+    let input = s.to_lowercase();
+    let expected = to_romaji(kana);
+    if input == expected {
+        return true;
+    }
+    input == replace_long(&expected)
+}
+
+fn replace_long(input: &str) -> String {
+    let mut out = String::from(input);
+    out = out.replace("ā", "aa");
+    out = out.replace("ī", "ii");
+    out = out.replace("ū", "uu");
+    out = out.replace("ē", "ee");
+    out = out.replace("ō", "oo");
+    out = out.replace("n̄", "nn");
+    out
+}
+
 pub fn to_romaji(input: &str) -> String {
     let mut was_small_tsu = false;
     let mut out = String::new();
@@ -129,6 +149,25 @@ fn kana_to_romaji(chr: char) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_is_match() {
+        assert!(is_match("", ""));
+        assert!(is_match("abc", "abc"));
+        assert!(is_match("[あ]", "[a]"));
+        assert!(is_match("あいうえお", "aiueo"));
+        assert!(is_match("アイウエオ", "aiueo"));
+        assert!(is_match("まって", "matte"));
+        assert!(is_match("マッテ", "matte"));
+        assert!(is_match(
+            "ーアーイーウーエーオーンー",
+            "-āīūēōn̄"
+        ));
+        assert!(is_match(
+            "ーアーイーウーエーオーンー",
+            "-aaiiuueeoonn"
+        ));
+    }
 
     #[test]
     fn test_to_romaji_non_kana() {
