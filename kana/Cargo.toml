@@ -1,0 +1,8 @@
+[package]
+name = "kana"
+version = "0.1.0"
+authors = ["Ricardo B. Machado <ricardobm@gmail.com>"]
+license = "MIT"
+description = "Hiragana and Katakana training app"
+repository = "https://github.com/ricardobm/nihon/"
+keywords = ["japanese", "kana", "hiragana", "katakana"]
