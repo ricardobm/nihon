@@ -1,15 +1,16 @@
 [package]
-name = "kana"
+name = "kana_app"
 version = "0.1.0"
 authors = ["Ricardo B. Machado <ricardobm@gmail.com>"]
 license = "MIT"
-description = "Hiragana and Katakana library"
+description = "Hiragana and Katakana training app"
 repository = "https://github.com/ricardobm/nihon/"
 keywords = ["japanese", "kana", "hiragana", "katakana"]
 
-build = "build.rs"
+[[bin]]
+name = "kana"
+path = "src/main.rs"
 
 [dependencies]
-lazy_static = "1.3.0"
-regex = "1.1.2"
-rand = "0.6.5"
+kana = { path = "../kana" }
+web-view = "0.4.0"

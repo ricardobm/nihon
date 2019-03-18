@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "kana"
+    "kana",
+    "kana_app"
 ]
