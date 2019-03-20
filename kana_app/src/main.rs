@@ -1,21 +1,15 @@
 extern crate kana;
+extern crate regex;
 extern crate web_view;
 
-use web_view::*;
+#[macro_use]
+extern crate lazy_static;
 
-macro_rules! style {
-    ( $x:expr ) => {
-        format!(r#"<style type="text/css">{}</style>"#, include_str!($x))
-    };
-}
+#[macro_use]
+mod html;
 
-macro_rules! script {
-    ( $x:expr ) => {
-        format!(
-            r#"<script type="text/javascript">{}</script>"#,
-            include_str!($x)
-        )
-    };
+fn get_index() -> String {
+    html!("index.html", "app.js", "styles.css")
 }
 
 fn main() {
@@ -40,36 +34,27 @@ fn main() {
 }
 
 fn run_webview() {
-    let html = format!(
-        r#"
-        <!doctype html>
-        <html>
-            <head>
-                {styles}
-            </head>
-            <body>
-                <!--[if lt IE 10]>
-                <div>Please upgrade Internet Explorer to use this software.</div>
-                <![endif]-->
-                <!--[if gte IE 10 | !IE ]> <!-->
-                {scripts}
-                <![endif]-->
-            </body>
-        </html>
-    "#,
-        styles = style!("../js/styles.css"),
-        scripts = script!("../js/app.js"),
-    );
-
     web_view::builder()
         .title("Kana")
-        .content(Content::Html(html))
+        .content(web_view::Content::Html(get_index()))
         .size(800, 600)
         .resizable(false)
         .user_data(())
         .invoke_handler(|webview, arg| {
-            println!("\nHandler invoked with: {}\n", arg);
-            webview.eval(r#"showAlert('From Rust!');"#).unwrap();
+            if arg == "refresh" {
+                let html = get_index();
+                webview
+                    .eval(&format!(
+                        "reload('{}')",
+                        html.replace("\\", "\\\\")
+                            .replace("\n", "\\n")
+                            .replace("'", "\\'")
+                    ))
+                    .unwrap();
+            } else {
+                println!("\nHandler invoked with: {}\n", arg);
+                webview.eval(r#"showAlert('From Rust!');"#).unwrap();
+            }
             Ok(())
         })
         .run()
