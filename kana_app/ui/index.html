@@ -4,11 +4,16 @@
         <link rel="stylesheet" type="text/css" href="styles.css" />
     </head>
     <body>
+
+        <div id="app">{{ message }}</div>
+
         <!--[if lt IE 10]>
         <div>Please upgrade Internet Explorer to use this software.</div>
         <![endif]-->
+        <script src="es5-shim.js"></script>
+        <script src="es6-shim.js"></script>
+        <script src="base.js"></script>
+        <script src="vue.js"></script>
         <script src="app.js"></script>
-
-        This is INDEX!
     </body>
 </html>

@@ -1,10 +1,8 @@
+//! Implements loading and inlining for the HTML resources used by
+//! the UI.
+
 use regex::Regex;
 
-// Matches a source file name and return its contents from the `ui`
-// directory.
-//
-// The source file will be inlined, but on debug builds this will
-// first attempt to load the file directly.
 macro_rules! files {
     ( $src:ident $( , $x:expr )* ) => {
         match $src {
@@ -14,6 +12,15 @@ macro_rules! files {
     };
 }
 
+/// Loads the given HTML index file, inlining scripts and CSS styles
+/// and returns its content.
+///
+/// All the resources used by the HTML must be listed and will be
+/// loaded relative to the `ui` directory.
+///
+/// This macro will inline all files in the source code, so there is
+/// no runtime dependency. In debug builds, an attempt will be made
+/// to load from the file system, falling back to the inlined file.
 macro_rules! html {
     ( $index:expr $( , $src:expr )* ) => {
         {
@@ -33,15 +40,27 @@ pub fn get_source(file: &str, inline: &str) -> String {
     use std::fs::File;
     use std::io::Read;
 
+    fn try_read(base: &str, file: &str) -> Option<String> {
+        let path = format!("{}/{}", base, file);
+        if let Ok(mut file) = File::open(&path) {
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)
+                .expect("Unable to read the file");
+            return Some(contents);
+        }
+        None
+    }
+
     // On debug builds we attempt first to load the file from the
     // `kana_app/ui` directory.
-    if let Ok(mut file) = File::open(format!("kana_app/ui/{}", file)) {
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)
-            .expect("Unable to read the file");
-        return contents;
+    if let Some(content) = try_read("kana_app/ui", file) {
+        content
+    } else if let Some(content) = try_read("ui", file) {
+        content
+    } else {
+        println!("Failed to open {}", file);
+        inline.to_string()
     }
-    inline.to_string()
 }
 
 #[cfg(not(debug_assertions))]
@@ -52,6 +71,8 @@ pub fn get_source(_file: &str, inline: &str) -> String {
 
 /// Replace `<link>` and `<script>` tags on the HTML text by their
 /// source file contents by calling `include` to retrieve them.
+///
+/// This is used by the `html!` macro.
 pub fn get_html(html: &str, include: impl Fn(&str) -> String) -> String {
     lazy_static! {
         static ref RE_LINK: Regex = Regex::new(
