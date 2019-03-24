@@ -115,7 +115,7 @@ impl Model {
         self.word = String::from(self.word_set.words[0].word);
     }
 
-    pub fn submit(&mut self, text: &str) {
+    pub fn submit(&mut self, text: &str, _elapsed_ms: u64) {
         self.reset_answer();
         if text.trim().len() == 0 {
             return;

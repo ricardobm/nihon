@@ -1,5 +1,8 @@
 (function() {
 
+    // Pause Break
+    Vue.config.keyCodes.pause = 19;
+
     initComponents();
     handleRefresh();
 
@@ -27,23 +30,28 @@
                 correct_answer: '',
 
             },
+
+            paused: false,
+            t0: 0,
         },
 
         template: [
-            '<div>',
+            '<div ref="main" ',
+            '    @keyup.pause.capture="toggle_pause" tabindex="0" ',
+            '>',
             '    <start-menu ',
             '        v-show="model.page == \'Start\'" ',
             '        @selected="start" ',
             '        v-model="model.set" ',
             '    />',
             '    <wrong-answer ',
-            '        v-show="model.fail" ',
+            '        v-show="model.fail && !paused" ',
             '        :word="model.fail_word" ',
             '        :wrong="model.wrong_answer" ',
             '        :correct="model.correct_answer" ',
             '    />',
-            '    <training-card ',
-            '        v-show="model.page == \'Training\'" ',
+            '    <training-card ref="training" ',
+            '        v-show="model.page == \'Training\' && !paused" ',
             '        @submit="submit" ',
             '        @restart="restart" ',
             '        :word="model.word" ',
@@ -53,6 +61,9 @@
             '        :chars="model.chars_done" ',
             '        :total_chars="model.chars_total" ',
             '    />',
+            '    <div v-show="model.page == \'Training\' && paused">',
+            '        <h1>Paused</h1>',
+            '    </div>',
             '    <div class="summary" ',
             '        v-show="model.page == \'Summary\'" ',
             '    >',
@@ -64,6 +75,7 @@
 
         methods: {
             start: function(size) {
+                this.reset_timer();
                 main.send({ Start: { set: this.model.set, size: size }});
             },
 
@@ -72,7 +84,37 @@
             },
 
             submit: function(text) {
-                main.send({ Submit: { text: text } });
+                let delta = this.get_timer();
+                this.reset_timer();
+                main.send({ Submit: { text: text, elapsed_ms: delta } });
+            },
+
+            toggle_pause: function() {
+                var me = this;
+                this.reset_timer();
+                if (this.model.page === 'Training') {
+                    this.paused = !this.paused;
+                    setTimeout(function() {
+                        if (me.paused) {
+                            me.$refs.main.focus();
+                        } else {
+                            let input = me.$refs.training.$refs.input;
+                            input.value = '';
+                            input.focus();
+                        }
+                    });
+
+                } else {
+                    this.paused = false;
+                }
+            },
+
+            reset_timer: function() {
+                this.t0 = Date.now();
+            },
+
+            get_timer: function() {
+                return Math.round(Date.now() - this.t0);
             },
         }
     });
@@ -84,8 +126,9 @@
         } else if (msg.Update) {
             console.log('UPDATE', msg.Update);
             Vue.set(app, 'model', msg.Update);
+            app.reset_timer();
         } else {
-            console.log(msg);
+            console.log('Invalid message:', msg);
         }
     });
 
@@ -186,7 +229,7 @@
             template: [
                 '<div class="training-card">',
                 '    <p class="japanese">{{word}}</p>',
-                '    <input ref="input" type="text" autofocus v-model="text" v-on:keyup.enter="submit"/>',
+                '    <input ref="input" type="text" v-model="text" v-on:keyup.enter="submit"/>',
                 '    <a href="#" v-on:click.stop.prevent="restart">[Restart]</a>',
                 '    <p>{{status}}</p>',
                 '    <p>{{chars}}/{{total_chars}}</p>',

@@ -45,7 +45,7 @@ enum Message {
     Start { set: Set, size: usize },
 
     /// Submit an answer to the training session.
-    Submit { text: String },
+    Submit { text: String, elapsed_ms: u64 },
 
     /// Reloads the web resources (on debug builds) and refreshes the
     /// web page.
@@ -117,8 +117,8 @@ fn main() {
                         update(webview, |model| model.start(set, size));
                     }
 
-                    Message::Submit { text } => {
-                        update(webview, |model| model.submit(&text));
+                    Message::Submit { text, elapsed_ms } => {
+                        update(webview, |model| model.submit(&text, elapsed_ms));
                     }
 
                     Message::Refresh => {
