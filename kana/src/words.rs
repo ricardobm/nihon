@@ -4,6 +4,7 @@
 //
 include!(concat!(env!("OUT_DIR"), "/word_list.rs"));
 
+#[derive(Debug, Clone, Copy)]
 pub struct Word {
     pub word: &'static str,
     pub count: i32,

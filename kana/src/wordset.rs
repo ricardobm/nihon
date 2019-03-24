@@ -5,10 +5,18 @@ use std::collections::HashSet;
 
 use rand::{seq::SliceRandom, thread_rng};
 
+#[derive(Debug, Clone, Default)]
 pub struct WordSet {
     pub words: Vec<&'static Word>,
     pub chars: usize,
     pub missing: Vec<char>,
+}
+
+impl WordSet {
+    pub fn shuffle(&mut self) {
+        let mut rng = thread_rng();
+        self.words.as_mut_slice().shuffle(&mut rng);
+    }
 }
 
 macro_rules! set_rare {
@@ -59,8 +67,6 @@ lazy_static! {
 }
 
 pub fn build_set(charset: &str, hint_len: usize) -> WordSet {
-    let mut rng = thread_rng();
-
     // Build a set with all the required characters.
     let mut required = HashSet::new();
     for chr in charset.chars() {
@@ -75,6 +81,23 @@ pub fn build_set(charset: &str, hint_len: usize) -> WordSet {
 
     let mut chars = 0;
 
+    let mut rng = thread_rng();
+
+    fn choose_index(set: &HashSet<usize>, input: &Vec<usize>) -> Option<usize> {
+        let mut rng = thread_rng();
+        let mut indexes: Vec<usize> = Vec::new();
+        for index in input {
+            if !set.contains(index) {
+                indexes.push(*index);
+            }
+        }
+        if let Ok(value) = indexes.choose_weighted(&mut rng, |&idx| ALL_WORDS[idx].count) {
+            Some(*value)
+        } else {
+            None
+        }
+    }
+
     // Add words to the set for each character in required.
     while required.len() > 0 && (hint_len == 0 || chars < hint_len) {
         // We choose one character at random to start so as to not
@@ -86,16 +109,7 @@ pub fn build_set(charset: &str, hint_len: usize) -> WordSet {
         // Choose one of the words that contains the given character.
         let mut ok = false;
         if let Some(word_indexes) = WORDS_BY_CHAR.get(elem) {
-            let mut indexes: Vec<usize> = Vec::new();
-            for index in word_indexes {
-                if !set_indexes.contains(index) {
-                    indexes.push(*index);
-                }
-            }
-
-            if let Ok(index) = indexes.choose_weighted(&mut rng, |&idx| ALL_WORDS[idx].count) {
-                let index = *index;
-
+            if let Some(index) = choose_index(&set_indexes, word_indexes) {
                 // Add the word to the set.
                 set_indexes.insert(index);
                 ok = true;
@@ -116,6 +130,30 @@ pub fn build_set(charset: &str, hint_len: usize) -> WordSet {
 
     for it in required {
         missing.insert(it);
+    }
+
+    // Completes the set
+    let mut changed = true;
+    let mut letters: Vec<_> = charset.chars().collect();
+    'outer: while chars < hint_len && changed {
+        {
+            changed = false;
+            letters.as_mut_slice().shuffle(&mut rng);
+        }
+        for chr in &letters {
+            if let Some(word_indexes) = WORDS_BY_CHAR.get(&chr) {
+                if let Some(index) = choose_index(&set_indexes, word_indexes) {
+                    // Add the word to the set.
+                    set_indexes.insert(index);
+                    changed = true;
+
+                    chars += ALL_WORDS[index].word.chars().count();
+                    if chars >= hint_len {
+                        break 'outer;
+                    }
+                }
+            }
+        }
     }
 
     let mut indexes: Vec<_> = set_indexes.iter().collect();
