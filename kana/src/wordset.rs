@@ -13,9 +13,23 @@ pub struct WordSet {
 }
 
 impl WordSet {
+    /// Shuffles all `words` in the WordSet.
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.words.as_mut_slice().shuffle(&mut rng);
+    }
+
+    /// Swaps the word at the given index with a random word at a
+    /// higher index.
+    pub fn swap_current(&mut self, index: usize) {
+        use rand::Rng;
+
+        let size = self.words.len();
+        if index < size - 1 {
+            let mut rng = thread_rng();
+            let next_index: usize = rng.gen_range(index + 1, size);
+            self.words.swap(index, next_index);
+        }
     }
 }
 

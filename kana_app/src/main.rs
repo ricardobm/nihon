@@ -35,11 +35,17 @@ fn get_index() -> String {
 /// Messages that can be received from the JavaScript application.
 #[derive(Serialize, Deserialize, Debug)]
 enum Message {
-    /// (Re)Initialize the data model.
+    /// Initialize the data model on the JavaScript side.
     Init,
 
+    /// Restart the model state.
+    Restart,
+
     /// Start a new training session.
-    Start { set: Set, size: u32 },
+    Start { set: Set, size: usize },
+
+    /// Submit an answer to the training session.
+    Submit { text: String },
 
     /// Reloads the web resources (on debug builds) and refreshes the
     /// web page.
@@ -65,23 +71,6 @@ enum Command {
 }
 
 fn main() {
-    // let set = kana::build_set(kana::SET_ALL_RARE, 500);
-
-    // println!(
-    //     "\nLoaded {} words with {} chars\n",
-    //     set.words.len(),
-    //     set.chars
-    // );
-
-    // if set.missing.len() > 0 {
-    //     let missing: Vec<_> = set.missing.iter().map(|x| x.to_string()).collect();
-    //     println!("Missing: {}\n", missing.join(" "));
-    // }
-
-    // for it in set.words.iter() {
-    //     println!("{} - {}", it.word, it.count);
-    // }
-
     let content = get_index();
     let server = server::start();
     let url = format!("http://localhost:{}", server.port());
@@ -120,8 +109,16 @@ fn main() {
                         update(webview, |_model| {});
                     }
 
+                    Message::Restart => {
+                        update(webview, |model| model.restart());
+                    }
+
                     Message::Start { set, size } => {
                         update(webview, |model| model.start(set, size));
+                    }
+
+                    Message::Submit { text } => {
+                        update(webview, |model| model.submit(&text));
                     }
 
                     Message::Refresh => {
