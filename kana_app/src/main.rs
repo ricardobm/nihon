@@ -10,8 +10,6 @@ extern crate serde_json;
 
 extern crate rouille;
 
-extern crate urlencoding;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
