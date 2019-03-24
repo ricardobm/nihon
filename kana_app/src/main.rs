@@ -15,7 +15,10 @@ use serde_json::Result;
 
 #[macro_use]
 mod html;
+mod model;
 mod server;
+
+use model::*;
 
 fn get_index() -> String {
     html!(
@@ -29,12 +32,15 @@ fn get_index() -> String {
     )
 }
 
-/// Application model.
-struct Model {}
-
 /// Messages that can be received from the JavaScript application.
 #[derive(Serialize, Deserialize, Debug)]
 enum Message {
+    /// (Re)Initialize the data model.
+    Init,
+
+    /// Start a new training session.
+    Start { set: Set, size: u32 },
+
     /// Reloads the web resources (on debug builds) and refreshes the
     /// web page.
     Refresh,
@@ -51,6 +57,9 @@ enum Message {
 /// Messages that can be sent to the JavaScript application.
 #[derive(Serialize, Deserialize, Debug)]
 enum Command {
+    /// Updates the data model in JavaScript.
+    Update(Model),
+
     /// Reloads the webview page.
     Refresh(bool),
 }
@@ -82,7 +91,7 @@ fn main() {
     println!("\nInternal server started at {}\n", url,);
 
     let mut log_counter: u64 = 1;
-    let model = &mut Model {};
+    let model = Model::new();
     web_view::builder()
         .title("Kana")
         .content(web_view::Content::Url(url))
@@ -90,9 +99,31 @@ fn main() {
         .resizable(false)
         .user_data(model)
         .invoke_handler(|webview: &mut web_view::WebView<_>, arg| {
+            println!("\nMessage: {}\n", arg);
             let input: Result<Message> = serde_json::from_str(arg);
+
+            fn update<F>(webview: &mut web_view::WebView<Model>, callback: F)
+            where
+                F: FnOnce(&mut Model),
+            {
+                let model = {
+                    let mut model = webview.user_data_mut();
+                    callback(model);
+                    model.clone()
+                };
+                send_command(webview, Command::Update(model));
+            };
+
             match input {
                 Ok(msg) => match msg {
+                    Message::Init => {
+                        update(webview, |_model| {});
+                    }
+
+                    Message::Start { set, size } => {
+                        update(webview, |model| model.start(set, size));
+                    }
+
                     Message::Refresh => {
                         // This will reload the content on debug
                         // builds.
@@ -118,7 +149,7 @@ fn main() {
                     }
                 },
                 Err(err) => {
-                    println!("Invalid message: {}\n{}\n\n", err, arg);
+                    println!("\nInvalid message: {}\n", err);
                 }
             }
             Ok(())
