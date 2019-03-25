@@ -131,7 +131,9 @@ impl Model {
 
     pub fn submit(&mut self, text: &str, elapsed_ms: u64) {
         self.reset_answer();
-        if text.trim().len() == 0 {
+
+        let text = text.trim();
+        if text.len() == 0 {
             return;
         }
 
@@ -141,7 +143,7 @@ impl Model {
         if self.word_index < num_words {
             let word = self.word_set.words[self.word_index];
             let romaji = kana::to_romaji(word.word);
-            if text == romaji {
+            if kana::is_match(word.word, text) {
                 self.hits += 1;
                 self.word_index += 1;
                 self.remaining -= 1;
