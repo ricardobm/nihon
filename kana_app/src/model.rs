@@ -33,6 +33,9 @@ pub struct Model {
     /// Current word for the training set.
     word: String,
 
+    /// Missing characters from the generated set.
+    missing: Vec<char>,
+
     /// Number of hits for current training session.
     hits: usize,
 
@@ -76,7 +79,10 @@ impl Model {
         return Model {
             set: Set::Hiragana,
             page: Page::Start,
+
             word: String::new(),
+            missing: Vec::new(),
+
             hits: 0,
             misses: 0,
             remaining: 0,
@@ -110,6 +116,8 @@ impl Model {
             size,
         );
         word_set.shuffle();
+
+        self.missing = word_set.missing.clone();
 
         self.remaining = word_set.words.len();
         for it in word_set.words.iter() {
@@ -159,6 +167,7 @@ impl Model {
     pub fn restart(&mut self) {
         self.page = Page::Start;
         self.word = String::new();
+        self.missing = Vec::new();
         self.hits = 0;
         self.misses = 0;
         self.remaining = 0;
