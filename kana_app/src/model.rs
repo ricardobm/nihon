@@ -48,6 +48,9 @@ pub struct Model {
     /// Total number of characters for the training session.
     chars_total: usize,
 
+    /// Aggregated time from all the answers.
+    answer_time: u64,
+
     /// True if the last submit was a fail.
     fail: bool,
 
@@ -79,12 +82,15 @@ impl Model {
             remaining: 0,
             chars_done: 0,
             chars_total: 0,
-            word_set: Default::default(),
-            word_index: 0,
+            answer_time: 0,
+
             fail: false,
             fail_word: String::new(),
             wrong_answer: String::new(),
             correct_answer: String::new(),
+
+            word_set: Default::default(),
+            word_index: 0,
         };
     }
 
@@ -115,11 +121,13 @@ impl Model {
         self.word = String::from(self.word_set.words[0].word);
     }
 
-    pub fn submit(&mut self, text: &str, _elapsed_ms: u64) {
+    pub fn submit(&mut self, text: &str, elapsed_ms: u64) {
         self.reset_answer();
         if text.trim().len() == 0 {
             return;
         }
+
+        self.answer_time += elapsed_ms;
 
         let num_words = self.word_set.words.len();
         if self.word_index < num_words {
@@ -156,6 +164,7 @@ impl Model {
         self.remaining = 0;
         self.chars_done = 0;
         self.chars_total = 0;
+        self.answer_time = 0;
         self.word_set = Default::default();
         self.word_index = 0;
         self.reset_answer();

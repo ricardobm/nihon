@@ -85,7 +85,7 @@ fn main() {
         .title("Kana")
         .content(web_view::Content::Url(url))
         .size(800, 600)
-        .resizable(false)
+        .resizable(true)
         .user_data(model)
         .invoke_handler(|webview: &mut web_view::WebView<_>, arg| {
             println!("\nMessage: {}\n", arg);

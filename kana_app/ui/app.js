@@ -22,6 +22,7 @@
                 remaining: 0,
                 chars_total: 0,
                 chars_done: 0,
+                answer_time: 0,
 
                 // Failures:
                 fail: false,
@@ -35,8 +36,62 @@
             t0: 0,
         },
 
+        computed: {
+            answer_time_text: function() {
+                let dur = Math.round(this.model.answer_time / 1000);
+                let min = Math.floor(dur / 60);
+                let sec = dur - min * 60;
+                let str = '';
+                let sep = '';
+                if (min > 0) {
+                    str += '<b>' + min.toString() + '</b> minute' + (min != 1 ? 's' : '');
+                    sep = ' and ';
+                }
+                if (str == '' || sec > 0) {
+                    str += sep + '<b>' + sec.toString() + '</b> second' + (sec != 1 ? 's' : '');
+                }
+                return str;
+            },
+
+            answer_percent: function() {
+                let pc = Math.round(100 * this.model.misses / this.model.hits);
+                return pc;
+            },
+
+            answer_emoji: function() {
+                let pc = this.answer_percent;
+                let emoji = '';
+                if (this.model.misses === 0) {
+                    emoji = '🤗💯🎉';
+                } else if (pc <= 10) {
+                    emoji = '😃';
+                } else if (pc <= 20) {
+                    emoji = '🙂';
+                } else if (pc <= 30) {
+                    emoji = '🙃';
+                } else if (pc <= 40) {
+                    emoji = '🤨';
+                } else if (pc <= 50) {
+                    emoji = '😐';
+                } else if (pc <= 60) {
+                    emoji = '😑';
+                } else if (pc <= 70) {
+                    emoji = '😒';
+                } else if (pc <= 80) {
+                    emoji = '😟';
+                } else if (pc <= 90) {
+                    emoji = '😦';
+                } else if (pc <= 100) {
+                    emoji = '😰';
+                } else {
+                    emoji = '😭💩';
+                }
+                return emoji;
+            },
+        },
+
         template: [
-            '<div ref="main" ',
+            '<div ref="main" class="main"',
             '    @keyup.pause.capture="toggle_pause" tabindex="0" ',
             '>',
             '    <start-menu ',
@@ -67,8 +122,36 @@
             '    <div class="summary" ',
             '        v-show="model.page == \'Summary\'" ',
             '    >',
-            '        <p>Missed {{model.misses}} in {{model.hits}}</p>',
-            '        <a href="#" v-on:click.stop.prevent="restart">[Back]</a>',
+            '        <div>',
+            '            <h1>Complete <span class="emoji" style="font-size: 0.8em" v-html="answer_emoji"></span></h1>',
+            '            <hr/>',
+            '            <p>',
+            '                Finished with…',
+            '            </p>',
+            '            <p>',
+            '                <span class="tab" /><b class="num">{{model.hits}}</b> words',
+            '            </p>',
+            '            <p>',
+            '                <span class="tab" /><b class="num">{{model.chars_total}}</b> characters',
+            '            </p>',
+            '            <p>',
+            '                <span class="tab" />',
+            '                <span v-if="model.misses != 1">',
+            '                    <b class="num">{{model.misses}}</b> mistakes',
+            '                </span>',
+            '                <span v-if="model.misses == 1">',
+            '                    <b class="num">{{model.misses}}</b> mistake',
+            '                </span>',
+            '                <span v-if="model.misses > 0">',
+            '                    <em>({{answer_percent}}%)</em>',
+            '                </span>',
+            '            </p>',
+            '            <hr/>',
+            '            <p>',
+            '                Completed in <span v-html="answer_time_text"></span>.',
+            '            </p>',
+            '        </div>',
+            '        <a href="#" class="restart" v-on:click.stop.prevent="restart">[Back to Menu]</a>',
             '    </div>',
             '</div>',
         ].join('\n'),
@@ -152,7 +235,7 @@
             template: [
                 '<div @change="$emit(\'input\', $event.target.value)" class="start-menu">',
                 '    <h1>Choose your training</h1>',
-                '    <div v-for="it in options">',
+                '    <div class="menu-row" v-for="it in options">',
                 '        <input type="radio" :key="it.set" :id="it.set" :value="it.set" :checked="value == it.set" />',
                 '        <label :for="it.set">{{it.text}}</label>',
                 '    </div>',
@@ -176,9 +259,9 @@
             ],
             template: [
                 '<div class="wrong-answer">',
-                '    <p><b>Word:</b> {{word}}</p>',
-                '    <p><b>Expected:</b> {{correct}}</p>',
-                '    <p><b>Was:</b> {{wrong}}</p>',
+                '    <p><b>word:</b> <span class="japanese">{{word}}</span></p>',
+                '    <p><b>expected:</b> <span class="mono">{{correct}}</span></p>',
+                '    <p><b>was:</b> <span class="mono">{{wrong}}</span></p>',
                 '</div>',
             ].join('\n'),
         });
@@ -212,6 +295,11 @@
                     }
                     return s;
                 },
+
+                percent_complete: function() {
+                    let pc = (100 * this.chars / this.total_chars).toFixed(1);
+                    return pc;
+                },
             },
 
             methods: {
@@ -228,11 +316,19 @@
 
             template: [
                 '<div class="training-card">',
-                '    <p class="japanese">{{word}}</p>',
+                '    <p class="word japanese">{{word}}</p>',
                 '    <input ref="input" type="text" v-model="text" v-on:keyup.enter="submit"/>',
-                '    <a href="#" v-on:click.stop.prevent="restart">[Restart]</a>',
-                '    <p>{{status}}</p>',
-                '    <p>{{chars}}/{{total_chars}}</p>',
+                '    <p class="status">{{status}}</p>',
+                '    <div class="progress">',
+                '        <div class="progress-text">{{percent_complete}}%</div>',
+                '        <div class="progress-bar" ',
+                '            :style="{ width: percent_complete + \'%\' }"',
+                '        >',
+                '            <div class="progress-text">{{percent_complete}}%</div>',
+                '            <div class="bar">&nbsp;</div>',
+                '        </div>',
+                '    </div>',
+                '    <a href="#" class="restart" v-on:click.stop.prevent="restart">[Back to Menu]</a>',
                 '</div>',
             ].join('\n'),
 
