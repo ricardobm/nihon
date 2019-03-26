@@ -10,6 +10,9 @@ pub use words::*;
 mod romaji;
 pub use romaji::*;
 
+mod split;
+pub use split::*;
+
 mod wordset;
 pub use wordset::*;
 

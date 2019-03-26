@@ -88,10 +88,10 @@ pub fn to_romaji(input: &str) -> String {
         let romaji = kana_to_romaji(chr);
 
         // Handles a small TSU
-        let is_small_tsu = romaji == SMALL_TSU;
+        let is_small_tsu = romaji == SMALL_TSU_REPR;
         if is_small_tsu {
             if was_small_tsu {
-                out.push_str(SMALL_TSU);
+                out.push_str(SMALL_TSU_REPR);
             }
             was_small_tsu = true;
             continue;
@@ -101,14 +101,14 @@ pub fn to_romaji(input: &str) -> String {
         // duplicate the consonant.
         if was_small_tsu {
             if romaji == "" {
-                out.push_str(SMALL_TSU);
+                out.push_str(SMALL_TSU_REPR);
             } else if romaji == "chi" {
                 out.push('t');
             } else {
                 let next = romaji.chars().next().unwrap();
                 match next {
                     // Only consonants should be duplicated
-                    '~' | 'a' | 'i' | 'u' | 'e' | 'o' => out.push_str(SMALL_TSU),
+                    '~' | 'a' | 'i' | 'u' | 'e' | 'o' => out.push_str(SMALL_TSU_REPR),
                     chr => out.push(chr),
                 }
             }
@@ -131,7 +131,7 @@ pub fn to_romaji(input: &str) -> String {
     }
 
     if was_small_tsu {
-        out.push_str(SMALL_TSU);
+        out.push_str(SMALL_TSU_REPR);
     }
 
     out
@@ -231,6 +231,7 @@ mod tests {
         assert_eq!(to_romaji("コッチ"), "kotchi");
         assert_eq!(to_romaji("あっさり"), "assari");
         assert_eq!(to_romaji("アッサリ"), "assari");
+        assert_eq!(to_romaji("アッイェ"), "ayye");
 
         assert_eq!(to_romaji("あっ"), "a~tsu");
         assert_eq!(to_romaji("いっ"), "i~tsu");
