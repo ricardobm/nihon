@@ -1,29 +1,4 @@
-use std::collections::HashMap;
-
-const LONG_MARK: char = 'ー';
-
-const LONG_A: char = 'ā';
-const LONG_I: char = 'ī';
-const LONG_U: char = 'ū';
-const LONG_E: char = 'ē';
-const LONG_O: char = 'ō';
-
-const LONG_N: &'static str = "n̄";
-
-use tables::*;
-
-lazy_static! {
-    static ref KANA_MAP: HashMap<char, &'static str> = {
-        let mut m = HashMap::new();
-        for row in HIRAGANA {
-            m.insert(row.0, row.1);
-        }
-        for row in KATAKANA {
-            m.insert(row.0, row.1);
-        }
-        m
-    };
-}
+use split::split_romaji;
 
 pub fn is_match(kana: &str, s: &str) -> bool {
     let input = s.to_lowercase();
@@ -31,123 +6,11 @@ pub fn is_match(kana: &str, s: &str) -> bool {
     if input == expected {
         return true;
     }
-    input == replace_long(&expected)
-}
-
-fn replace_long(input: &str) -> String {
-    let mut out = String::from(input);
-    out = out.replace("ā", "aa");
-    out = out.replace("ī", "ii");
-    out = out.replace("ū", "uu");
-    out = out.replace("ē", "ee");
-    out = out.replace("ō", "oo");
-    out = out.replace("n̄", "nn");
-    out
+    input == expected.replace("ー", "-")
 }
 
 pub fn to_romaji(input: &str) -> String {
-    let mut was_small_tsu = false;
-    let mut out = String::new();
-
-    let mut text = String::from(input);
-    for row in DIGRAPH {
-        text = text.replace(row.0, row.1);
-    }
-
-    for chr in text.chars() {
-        if chr == LONG_MARK {
-            let mut replace = '-';
-            if out.ends_with("a") {
-                replace = LONG_A;
-            } else if out.ends_with("i") {
-                replace = LONG_I;
-            } else if out.ends_with("u") {
-                replace = LONG_U;
-            } else if out.ends_with("e") {
-                replace = LONG_E;
-            } else if out.ends_with("o") {
-                replace = LONG_O;
-            } else if out.ends_with("n") {
-                replace = 'n';
-            }
-
-            if replace != '-' {
-                let cur_len = out.len();
-                out.truncate(cur_len - 1);
-                if replace == 'n' {
-                    out.push_str(LONG_N);
-                } else {
-                    out.push(replace);
-                }
-            } else {
-                out.push(replace);
-            }
-            continue;
-        }
-
-        let romaji = kana_to_romaji(chr);
-
-        // Handles a small TSU
-        let is_small_tsu = romaji == SMALL_TSU_REPR;
-        if is_small_tsu {
-            if was_small_tsu {
-                out.push_str(SMALL_TSU_REPR);
-            }
-            was_small_tsu = true;
-            continue;
-        }
-
-        // If the last character was a small TSU, we want to
-        // duplicate the consonant.
-        if was_small_tsu {
-            if romaji == "" {
-                out.push_str(SMALL_TSU_REPR);
-            } else if romaji == "chi" {
-                out.push('t');
-            } else {
-                let next = romaji.chars().next().unwrap();
-                match next {
-                    // Only consonants should be duplicated
-                    '~' | 'a' | 'i' | 'u' | 'e' | 'o' => out.push_str(SMALL_TSU_REPR),
-                    chr => out.push(chr),
-                }
-            }
-        }
-        was_small_tsu = is_small_tsu;
-
-        if romaji.starts_with("~y") && out.ends_with("i") {
-            let cur_len = out.len();
-            out.truncate(cur_len - 1);
-            if out.ends_with("ch") || out.ends_with("sh") || out.ends_with("j") {
-                out.push_str(&romaji[2..])
-            } else {
-                out.push_str(&romaji[1..])
-            }
-        } else if romaji != "" {
-            out.push_str(romaji.as_str());
-        } else {
-            out.push(chr);
-        }
-    }
-
-    if was_small_tsu {
-        out.push_str(SMALL_TSU_REPR);
-    }
-
-    out
-}
-
-fn kana_to_romaji(chr: char) -> String {
-    match KANA_MAP.get(&chr) {
-        Some(&s) => String::from(s),
-        None => {
-            if chr >= 'a' && chr <= 'z' {
-                chr.to_string()
-            } else {
-                String::new()
-            }
-        }
-    }
+    split_romaji(input).concat()
 }
 
 // spell-checker: disable
@@ -166,10 +29,6 @@ mod tests {
         assert!(is_match("アイウエオ", "aiueo"));
         assert!(is_match("まって", "matte"));
         assert!(is_match("マッテ", "matte"));
-        assert!(is_match(
-            "ーアーイーウーエーオーンー",
-            "-āīūēōn̄"
-        ));
         assert!(is_match(
             "ーアーイーウーエーオーンー",
             "-aaiiuueeoonn"
@@ -238,7 +97,7 @@ mod tests {
         assert_eq!(to_romaji("うっ"), "u~tsu");
         assert_eq!(to_romaji("えっ"), "e~tsu");
         assert_eq!(to_romaji("おっ"), "o~tsu");
-        assert_eq!(to_romaji("っっコ"), "~tsukko");
+        assert_eq!(to_romaji("っっコ"), "kkko");
         assert_eq!(to_romaji("っ"), "~tsu");
         assert_eq!(to_romaji("ッ"), "~tsu");
     }
@@ -300,47 +159,47 @@ mod tests {
     fn test_to_romaji_long() {
         assert_eq!(
             to_romaji("アーイーウーエーオー シー シャー ンー xー"),
-            "āīūēō shī shā n̄ x-"
+            "aaiiuueeoo shii shaa nn xx"
         )
     }
 
     #[test]
     fn test_to_romaji_random_words() {
-        assert_eq!(to_romaji("パーティー"), "pātī");
+        assert_eq!(to_romaji("パーティー"), "paatii");
         assert_eq!(to_romaji("ディスク"), "disuku");
         assert_eq!(to_romaji("ファッション"), "fasshon");
         assert_eq!(to_romaji("フィクション"), "fikushon");
-        assert_eq!(to_romaji("シェルター"), "sherutā");
-        assert_eq!(to_romaji("ジェスチャー"), "jesuchā");
-        assert_eq!(to_romaji("ハロウィーン"), "harowīn");
+        assert_eq!(to_romaji("シェルター"), "sherutaa");
+        assert_eq!(to_romaji("ジェスチャー"), "jesuchaa");
+        assert_eq!(to_romaji("ハロウィーン"), "harowiin");
         assert_eq!(to_romaji("ソフトウェア"), "sofutowea");
-        assert_eq!(to_romaji("フォーク"), "fōku");
+        assert_eq!(to_romaji("フォーク"), "fooku");
         assert_eq!(to_romaji("フェア"), "fea");
         assert_eq!(to_romaji("チェス"), "chesu");
         assert_eq!(to_romaji("デュエット"), "dyuetto");
         assert_eq!(to_romaji("ストップウォッチ"), "sutoppuwotchi");
         assert_eq!(to_romaji("イェイ"), "yei");
         assert_eq!(to_romaji("タトゥ"), "tatu");
-        assert_eq!(to_romaji("クォーツ"), "kwōtsu");
-        assert_eq!(to_romaji("クォーク"), "kwōku");
-        assert_eq!(to_romaji("モーツァルト"), "mōtsaruto");
+        assert_eq!(to_romaji("クォーツ"), "kwootsu");
+        assert_eq!(to_romaji("クォーク"), "kwooku");
+        assert_eq!(to_romaji("モーツァルト"), "mootsaruto");
         assert_eq!(to_romaji("プレッツェル"), "purettseru");
         assert_eq!(to_romaji("インテルメッツォ"), "interumettso");
-        assert_eq!(to_romaji("フューチャー"), "fyūchā");
+        assert_eq!(to_romaji("フューチャー"), "fyuuchaa");
         assert_eq!(to_romaji("ヴァイオリン"), "vaiorin");
-        assert_eq!(to_romaji("ヴィーナス"), "vīnasu");
+        assert_eq!(to_romaji("ヴィーナス"), "viinasu");
         assert_eq!(to_romaji("ラヴ"), "ravu");
-        assert_eq!(to_romaji("ベートーヴェン"), "bētōven");
-        assert_eq!(to_romaji("ヴォーカリスト"), "vōkarisuto");
+        assert_eq!(to_romaji("ベートーヴェン"), "beetooven");
+        assert_eq!(to_romaji("ヴォーカリスト"), "vookarisuto");
         assert_eq!(
             to_romaji("ドゥーイットユアセルフ"),
-            "dūittoyuaserufu"
+            "duuittoyuaserufu"
         );
         assert_eq!(to_romaji("エスクァイア"), "esukwaia");
         assert_eq!(to_romaji("クィントゥス"), "kwintusu");
         assert_eq!(to_romaji("クェンティン"), "kwentin");
         assert_eq!(to_romaji("グァンタナモ"), "gwantanamo");
         assert_eq!(to_romaji("ツィンメルマン"), "tsinmeruman");
-        assert_eq!(to_romaji("テューリンゲン"), "tyūringen");
+        assert_eq!(to_romaji("テューリンゲン"), "tyuuringen");
     }
 }
