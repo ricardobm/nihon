@@ -129,6 +129,9 @@ pub fn diff<'a, L: IntoIterator<Item = S>, S: AsRef<str>>(source: L, input: &'a 
     Then `op` can be defined as just returning the respective
     operation for the minimal cost.
     
+    The actual cost is more complex than what is depicted above,
+    see below for details.
+    
     */
 
     #[derive(Copy, Clone, Debug)]
@@ -160,42 +163,66 @@ pub fn diff<'a, L: IntoIterator<Item = S>, S: AsRef<str>>(source: L, input: &'a 
             }
         }
 
+        /*
+        How costs are calculated:
+        
+        We calculate cost by the number of characters touched by the
+        operations, so:
+        
+        - Insert the cost is the size of the inserted text
+        - Delete the cost is the size of the deleted text
+        - Change the cost is the size of the deleted + inserted
+        
+        Besides the cost above, we add +1 for each operation. This is
+        so we prioritize the minimal number of operations.
+        */
+
         let out = if a >= env.source.len() && b >= env.input.len() {
             // Empty case
+            println!(">> @({}, {}) - END", a, b);
             (D::End, 0)
         } else if a >= env.source.len() {
             // We are at the end of source, so just delete the input
             // extra suffix in a single operation.
-            (D::Delete(env.input.len() - b), 1)
+            let del_len = env.input.len() - b;
+            println!(">> @({}, {}) - DEL", a, b);
+            (D::Delete(del_len), del_len + 1)
         } else if b >= env.input.len() {
             // We are at the end of the input, so we append all
             // remaining syllables in the source, one at a time.
             let remaining = env.source.len() - a;
-            (D::Insert, remaining)
+            let mut len = 0;
+            for it in &env.source[a..] {
+                len += it.as_ref().len();
+            }
+            println!(">> @({}, {}) - INS", a, b);
+            (D::Insert, len + remaining)
         } else if env.input[b..].starts_with(env.source[a].as_ref()) {
             // Source and input match, skip the syllable and continue.
             let syllable_len = { env.source[a].as_ref().len() };
             let (_, cost) = op(env, a + 1, b + syllable_len);
+            println!(">> @({}, {}) - SAME", a, b);
             (D::Same, cost)
         } else {
             let rem_input = { env.input.len() - b };
+            let a_len = env.source[a].as_ref().len();
 
             // Cost of insertion.
             let ins = {
                 let (_, cost) = op(env, a + 1, b);
-                (D::Insert, cost + 1)
+                (D::Insert, cost + a_len + 1)
             };
 
             // Cost of deletion.
             let del = {
                 let mut del = {
                     let (_, cost) = op(env, a, b + 1);
-                    (1, cost)
+                    (1, cost + 1)
                 };
                 for k in 2..rem_input + 1 {
                     let (_, new_cost) = op(env, a, b + k);
-                    // we use <= to prioritize the longest
-                    if new_cost <= del.1 {
+                    let new_cost = new_cost + k;
+                    if new_cost < del.1 {
                         del = (k, new_cost);
                     }
                 }
@@ -206,33 +233,40 @@ pub fn diff<'a, L: IntoIterator<Item = S>, S: AsRef<str>>(source: L, input: &'a 
             let rep = {
                 let mut rep = {
                     let (_, cost) = op(env, a + 1, b + 1);
-                    (1, cost)
+                    (1, cost + 1 + a_len)
                 };
                 for k in 2..rem_input + 1 {
                     let (_, new_cost) = op(env, a + 1, b + k);
-                    // we use <= to prioritize the longest
-                    if new_cost <= rep.1 {
+                    let new_cost = new_cost + k + a_len;
+                    if new_cost < rep.1 {
                         rep = (k, new_cost);
                     }
                 }
                 (D::Replace(rep.0), rep.1 + 1)
             };
 
-            // Minimize the cost, prioritizing DEL > INS > REP
+            println!(
+                ">> @({}, {}) - INS / DEL / REP: {:?} / {:?} / {:?}",
+                a, b, ins, del, rep
+            );
+
+            // Minimize the cost. Precedence order is REP > DEL > INS
             if ins.1 < del.1 {
-                if ins.1 <= rep.1 {
+                if ins.1 < rep.1 {
                     ins
                 } else {
                     rep
                 }
             } else {
-                if del.1 <= rep.1 {
+                if del.1 < rep.1 {
                     del
                 } else {
                     rep
                 }
             }
         };
+
+        println!("== @({}, {}) = {:?}", a, b, out);
 
         env.memo.insert(key, out);
         out
