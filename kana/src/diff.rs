@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 /// An element in a diff between a source and an input, where the
 /// source is canonical and the diff transforms the input to source.
 ///
 /// The sequence of `Diff` entries give the edit operations that must
 /// be applied to the `input` in order to produce `source`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Diff {
     /// Sequence of text is the same in source and input.
     ///

@@ -25,11 +25,7 @@
                 answer_time: 0,
 
                 // Failures:
-                fail: false,
-                fail_word: '',
-                wrong_answer: '',
-                correct_answer: '',
-
+                submitted: null,
             },
 
             paused: false,
@@ -37,6 +33,11 @@
         },
 
         computed: {
+
+            fail: function() {
+                return this.model.submitted && !this.model.submitted.is_match;
+            },
+
             answer_time_text: function() {
                 let dur = Math.round(this.model.answer_time / 1000);
                 let min = Math.floor(dur / 60);
@@ -100,10 +101,8 @@
             '        v-model="model.set" ',
             '    />',
             '    <wrong-answer ',
-            '        v-show="model.fail && !paused" ',
-            '        :word="model.fail_word" ',
-            '        :wrong="model.wrong_answer" ',
-            '        :correct="model.correct_answer" ',
+            '        v-show="fail && !paused" ',
+            '        :model="model.submitted" ',
             '    />',
             '    <training-card ref="training" ',
             '        v-show="model.page == \'Training\' && !paused" ',
@@ -262,15 +261,18 @@
 
         Vue.component('wrong-answer', {
             props: [
-                'word',
-                'correct',
-                'wrong',
+                'model',
             ],
+            computed: {
+                data: function() {
+                    return this.model || {};
+                },
+            },
             template: [
                 '<div class="wrong-answer">',
-                '    <p><b>word:</b> <span class="japanese">{{word}}</span></p>',
-                '    <p><b>expected:</b> <span class="mono">{{correct}}</span></p>',
-                '    <p><b>was:</b> <span class="mono">{{wrong}}</span></p>',
+                '    <p><b>word:</b> <span class="japanese">{{data.kana}}</span></p>',
+                '    <p><b>expected:</b> <span class="mono">{{data.actual}}</span></p>',
+                '    <p><b>was:</b> <span class="mono">{{data.romaji}}</span></p>',
                 '</div>',
             ].join('\n'),
         });

@@ -54,17 +54,8 @@ pub struct Model {
     /// Aggregated time from all the answers.
     answer_time: u64,
 
-    /// True if the last submit was a fail.
-    fail: bool,
-
-    /// If `fail`, contains the failed word.
-    fail_word: String,
-
-    /// If `fail`, contains the answer that was considered wrong.
-    wrong_answer: String,
-
-    /// If `fail`, contains the correct answer.
-    correct_answer: String,
+    /// Match for the last submitted kana.
+    submitted: Option<kana::Match>,
 
     #[serde(skip)]
     word_set: kana::WordSet,
@@ -89,11 +80,7 @@ impl Model {
             chars_done: 0,
             chars_total: 0,
             answer_time: 0,
-
-            fail: false,
-            fail_word: String::new(),
-            wrong_answer: String::new(),
-            correct_answer: String::new(),
+            submitted: None,
 
             word_set: Default::default(),
             word_index: 0,
@@ -130,9 +117,8 @@ impl Model {
     }
 
     pub fn submit(&mut self, text: &str, elapsed_ms: u64) {
-        self.reset_answer();
-
         let text = text.trim();
+        self.submitted = None;
         if text.len() == 0 {
             return;
         }
@@ -142,20 +128,17 @@ impl Model {
         let num_words = self.word_set.words.len();
         if self.word_index < num_words {
             let word = self.word_set.words[self.word_index];
-            let romaji = kana::to_romaji(word.word);
-            if kana::is_match(word.word, text) {
+            let s = kana::Match::new(word.word, text);
+            if s.is_match {
                 self.hits += 1;
                 self.word_index += 1;
                 self.remaining -= 1;
                 self.chars_done += word.word.chars().count();
             } else {
                 self.misses += 1;
-                self.fail = true;
-                self.fail_word = String::from(word.word);
-                self.wrong_answer = String::from(text);
-                self.correct_answer = romaji.clone();
                 self.word_set.swap_current(self.word_index);
             }
+            self.submitted = Some(s);
 
             if self.word_index < num_words {
                 self.word = String::from(self.word_set.words[self.word_index].word);
@@ -176,15 +159,8 @@ impl Model {
         self.chars_done = 0;
         self.chars_total = 0;
         self.answer_time = 0;
+        self.submitted = None;
         self.word_set = Default::default();
         self.word_index = 0;
-        self.reset_answer();
-    }
-
-    fn reset_answer(&mut self) {
-        self.fail = false;
-        self.fail_word = String::new();
-        self.wrong_answer = String::new();
-        self.correct_answer = String::new();
     }
 }

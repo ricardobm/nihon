@@ -1,16 +1,53 @@
-use split::split_romaji;
+use serde::{Deserialize, Serialize};
 
-pub fn is_match(kana: &str, s: &str) -> bool {
-    let input = s.to_lowercase();
-    let expected = to_romaji(kana);
-    if input == expected {
-        return true;
-    }
-    input == expected.replace("ー", "-")
-}
+use diff;
+use split::split_romaji;
 
 pub fn to_romaji(input: &str) -> String {
     split_romaji(input).concat()
+}
+
+/// Result of matching a kana and romaji string.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Match {
+    /// True if `kana` and `romaji` match.
+    pub is_match: bool,
+
+    /// The kana input string.
+    pub kana: String,
+
+    /// The romaji input string.
+    pub romaji: String,
+
+    /// The actual romaji translation for the given kana.
+    pub actual: String,
+
+    /// Split syllables of `kana`.
+    pub split: Vec<String>,
+
+    /// Diff between `romaji` and `kana`.
+    pub diff: Vec<diff::Diff>,
+}
+
+impl Match {
+    pub fn new(kana: &str, romaji: &str) -> Match {
+        let split = split_romaji(kana);
+        let romaji = romaji.to_lowercase().replace("-", "ー");
+        let diff = diff::diff(&split, &romaji);
+        let actual = split.concat();
+        let is_match = diff.iter().all(|ref x| match x {
+            diff::Diff::Same(_) => true,
+            _ => false,
+        });
+        Match {
+            is_match,
+            kana: String::from(kana),
+            romaji,
+            actual,
+            split,
+            diff,
+        }
+    }
 }
 
 // spell-checker: disable
@@ -21,6 +58,10 @@ mod tests {
 
     #[test]
     fn test_is_match() {
+        fn is_match(kana: &str, romaji: &str) -> bool {
+            Match::new(kana, romaji).is_match
+        }
+
         assert!(is_match("", ""));
         assert!(is_match("abc", "abc"));
         assert!(is_match("abc", "ABC"));
