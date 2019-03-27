@@ -16,4 +16,6 @@ pub use split::*;
 mod wordset;
 pub use wordset::*;
 
+mod diff;
+
 mod tables;
