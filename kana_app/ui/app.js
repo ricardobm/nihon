@@ -93,6 +93,11 @@
                 return emoji;
             },
 
+            average_table: function() {
+                let tb = this.model.times || [];
+                return tb;
+            },
+
             error_table: function() {
                 let errs = this.model.errors || {};
                 let table = [];
@@ -168,11 +173,17 @@
             '            <p>',
             '                Completed in <span v-html="answer_time_text"></span>.',
             '            </p>',
-            '            <hr v-if="model.misses"/>',
+            '            <hr/>',
             '            <p  v-if="model.misses">',
-            '                <span class="error_table">Mistakes:</span>',
-            '                <span v-for="it in error_table" class="error_table">',
+            '                <label class="table">Mistakes:</label>',
+            '                <span v-for="it in error_table" class="table">',
             '                    <b class="japanese">{{it.kana}}</b> {{it.count}}',
+            '                </span>',
+            '            </p>',
+            '            <p>',
+            '                <label class="table">Estimated time per character:</label>',
+            '                <span v-for="it in average_table" class="table">',
+            '                    <b class="japanese">{{it.kana}}</b> {{it.time.toFixed(2)}}s',
             '                </span>',
             '            </p>',
             '            <hr/>',
