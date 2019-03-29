@@ -285,11 +285,10 @@
                 '        <label :for="it.set">{{it.text}}</label>',
                 '    </div>',
                 '    <div class="button-row">',
-                '        <a href="#" class="button" @click="$emit(\'selected\',  10)">10</a>',
                 '        <a href="#" class="button" @click="$emit(\'selected\',  50)">50</a>',
                 '        <a href="#" class="button" @click="$emit(\'selected\', 100)">100</a>',
-                '        <a href="#" class="button" @click="$emit(\'selected\', 250)">250</a>',
-                '        <a href="#" class="button" @click="$emit(\'selected\', 500)">500</a>',
+                '        <a href="#" class="button" @click="$emit(\'selected\', 150)">150</a>',
+                '        <a href="#" class="button" @click="$emit(\'selected\', 300)">250</a>',
                 '        <a href="#" class="button" @click="$emit(\'selected\',   0)">All</a>',
                 '    </div>',
                 '</div>'
@@ -318,8 +317,8 @@
                         let it = model.diff[i];
                         if (it.Same) {
                             kana   += model.split[kana_index];
-                            actual += it.Same;
-                            answer += it.Same;
+                            actual += eq(it.Same);
+                            answer += eq(it.Same);
                             kana_index++;
                         } else if (it.Delete) {
                             answer += del(it.Delete);
@@ -343,12 +342,16 @@
                         answer: answer,
                     }
 
+                    function eq(txt) {
+                        return '<span class="diff">' + txt + '</span>'
+                    }
+
                     function del(txt) {
-                        return '<span class="diff-del">' + txt + '</span>'
+                        return '<span class="diff diff-del">' + txt + '</span>'
                     }
 
                     function ins(txt) {
-                        return '<span class="diff-ins">' + txt + '</span>'
+                        return '<span class="diff diff-ins">' + txt + '</span>'
                     }
 
                     function rep(txt) {

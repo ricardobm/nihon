@@ -193,6 +193,10 @@ h1 {
 	font-variant: small-caps;
 }
 
+.diff {
+	border-bottom: 1px solid transparent;
+}
+
 .diff-del {
 	color: #D05050;
 }

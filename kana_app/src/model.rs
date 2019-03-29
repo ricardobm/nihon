@@ -89,7 +89,7 @@ impl Model {
     /// Returns a new `Model`.
     pub fn new() -> Model {
         return Model {
-            set: Set::Hiragana,
+            set: Set::All,
             page: Page::Start,
 
             word: String::new(),
