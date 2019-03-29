@@ -267,12 +267,63 @@
                 data: function() {
                     return this.model || {};
                 },
+                diff: function() {
+                    let model = this.model;
+                    if (!model || !model.diff) {
+                        return {};
+                    }
+
+                    let kana = '';
+                    let actual = '';
+                    let answer = '';
+                    let kana_index = 0;
+                    for (let i = 0; i < model.diff.length; i++) {
+                        let it = model.diff[i];
+                        if (it.Same) {
+                            kana   += model.split[kana_index];
+                            actual += it.Same;
+                            answer += it.Same;
+                            kana_index++;
+                        } else if (it.Delete) {
+                            answer += del(it.Delete);
+                        } else if (it.Insert) {
+                            kana   += ins(model.split[kana_index]);
+                            actual += ins(it.Insert);
+                            kana_index++;
+                        } else if (it.Change) {
+                            let src = it.Change[0];
+                            let dst = it.Change[1];
+                            kana   += rep(model.split[kana_index]);
+                            actual += rep(dst);
+                            answer += rep(src);
+                            kana_index++;
+                        }
+                    }
+
+                    return {
+                        kana:   kana,
+                        actual: actual,
+                        answer: answer,
+                    }
+
+                    function del(txt) {
+                        return '<span class="diff-del">' + txt + '</span>'
+                    }
+
+                    function ins(txt) {
+                        return '<span class="diff-ins">' + txt + '</span>'
+                    }
+
+                    function rep(txt) {
+                        return '<span class="diff-rep">' + txt + '</span>'
+                    }
+                }
             },
             template: [
                 '<div class="wrong-answer">',
-                '    <p><b>word:</b> <span class="japanese">{{data.kana}}</span></p>',
-                '    <p><b>expected:</b> <span class="mono">{{data.actual}}</span></p>',
-                '    <p><b>was:</b> <span class="mono">{{data.romaji}}</span></p>',
+                '    <p><b>word:</b> <span class="japanese" v-html="diff.kana"></span></p>',
+                '    <p><b>expected:</b> <span class="mono" v-html="diff.actual"></span></p>',
+                '    <p><b>was:</b> <span class="mono" v-html="diff.answer"></span></p>',
                 '</div>',
             ].join('\n'),
         });

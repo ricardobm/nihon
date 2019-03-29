@@ -23,7 +23,7 @@ pub struct Match {
     pub actual: String,
 
     /// Split syllables of `kana`.
-    pub split: Vec<String>,
+    pub split: Vec<char>,
 
     /// Diff between `romaji` and `kana`.
     pub diff: Vec<diff::Diff>,
@@ -31,14 +31,15 @@ pub struct Match {
 
 impl Match {
     pub fn new(kana: &str, romaji: &str) -> Match {
-        let split = split_romaji(kana);
+        let syllables = split_romaji(kana);
         let romaji = romaji.to_lowercase().replace("-", "ー");
-        let diff = diff::diff(&split, &romaji);
-        let actual = split.concat();
+        let diff = diff::diff(&syllables, &romaji);
+        let actual = syllables.concat();
         let is_match = diff.iter().all(|ref x| match x {
             diff::Diff::Same(_) => true,
             _ => false,
         });
+        let split = kana.chars().collect();
         Match {
             is_match,
             kana: String::from(kana),
