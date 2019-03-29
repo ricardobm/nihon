@@ -36,22 +36,22 @@ with `cargo build` and run with `cargo run`.
 Choose the training set (katakana, hiragana or both) and
 length:
 
-![Main menu](https://github.com/ricardobm/nihon/blob/master/docs/menu.png)
+![Main menu](docs/menu.png)
 
 Note that length is in number of characters (not words) and
 that choosing *"All"* generates the minimum set with all characters.
 
 The guess screen displays the number of words, overall progress…
 
-![Guess screen](https://github.com/ricardobm/nihon/blob/master/docs/guess.png)
+![Guess screen](docs/guess.png)
 
 …and the number of errors.
 
-![Guess screen with error](https://github.com/ricardobm/nihon/blob/master/docs/guess2.png)
+![Guess screen with error](docs/guess2.png)
 
 Mistakes are displayed in the next screen and highlighted:
 
-![Showing a mistake](https://github.com/ricardobm/nihon/blob/master/docs/diff.png)
+![Showing a mistake](docs/diff.png)
 
 Pressing *Enter* dismisses the error popup and resets the timer
 for the current screen.
@@ -59,11 +59,24 @@ for the current screen.
 At the end of the training set a report is shown with completion
 time, overall status and time average per character (estimate):
 
-![Report at the end](https://github.com/ricardobm/nihon/blob/master/docs/complete-1.png)
+![Report at the end](docs/complete-1.png)
 
 Mistakes are also broken down per character:
 
-![Reporting mistakes](https://github.com/ricardobm/nihon/blob/master/docs/complete-2.png)
+![Reporting mistakes](docs/complete-2.png)
 
 If the set length was not enough to include all characters, the
 report screen will also display any missing ones, as shown above.
+
+# Future improvements
+
+* Use an alternative to the webview that works on other platforms and
+  is not IE
+* Better diff algorithm for errors (e.g. split the romaji syllables
+  when diffing and diff based on similarities)
+* Persist statistics and settings
+  * Additionally: provide statistics across multiple sessions
+* Option to finish training session early
+* Proper build
+* User documentation
+* More words, Kanji, …
