@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 /// Sets of characters for training.
@@ -57,11 +59,20 @@ pub struct Model {
     /// Match for the last submitted kana.
     submitted: Option<kana::Match>,
 
+    /// Set of words for the current training.
     #[serde(skip)]
     word_set: kana::WordSet,
 
+    /// Current word in the training set.
     #[serde(skip)]
     word_index: usize,
+
+    /// Errors by kana character.
+    errors: HashMap<char, usize>,
+
+    /// Time spent for each word in the set.
+    #[serde(skip)]
+    word_time: Vec<u64>,
 }
 
 impl Model {
@@ -84,6 +95,9 @@ impl Model {
 
             word_set: Default::default(),
             word_index: 0,
+
+            errors: HashMap::new(),
+            word_time: Vec::new(),
         };
     }
 
@@ -114,6 +128,9 @@ impl Model {
         self.word_index = 0;
         self.word_set = word_set;
         self.word = String::from(self.word_set.words[0].word);
+
+        self.errors = HashMap::new();
+        self.word_time = self.word_set.words.iter().map(|_x| 0).collect();
     }
 
     pub fn submit(&mut self, text: &str, elapsed_ms: u64) {
@@ -129,6 +146,9 @@ impl Model {
         if self.word_index < num_words {
             let word = self.word_set.words[self.word_index];
             let s = kana::Match::new(word.word, text);
+
+            self.word_time[self.word_index] += elapsed_ms;
+
             if s.is_match {
                 self.hits += 1;
                 self.word_index += 1;
@@ -136,8 +156,17 @@ impl Model {
                 self.chars_done += word.word.chars().count();
             } else {
                 self.misses += 1;
-                self.word_set.swap_current(self.word_index);
+
+                // Compute the failed syllables
+                for chr in &s.fails {
+                    self.errors.entry(*chr).and_modify(|x| *x += 1).or_insert(1);
+                }
+
+                // Move the word to later in the set.
+                let new_index = self.word_set.swap_current(self.word_index);
+                self.word_time.swap(self.word_index, new_index);
             }
+
             self.submitted = Some(s);
 
             if self.word_index < num_words {

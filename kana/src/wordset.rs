@@ -21,7 +21,9 @@ impl WordSet {
 
     /// Swaps the word at the given index with a random word at a
     /// higher index.
-    pub fn swap_current(&mut self, index: usize) {
+    ///
+    /// Returns the swapped index.
+    pub fn swap_current(&mut self, index: usize) -> usize {
         use rand::Rng;
 
         let size = self.words.len();
@@ -29,6 +31,9 @@ impl WordSet {
             let mut rng = thread_rng();
             let next_index: usize = rng.gen_range(index + 1, size);
             self.words.swap(index, next_index);
+            next_index
+        } else {
+            index
         }
     }
 }

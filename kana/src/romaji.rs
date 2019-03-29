@@ -27,6 +27,9 @@ pub struct Match {
 
     /// Diff between `romaji` and `kana`.
     pub diff: Vec<diff::Diff>,
+
+    /// The failed kana chars.
+    pub fails: Vec<char>,
 }
 
 impl Match {
@@ -39,7 +42,23 @@ impl Match {
             diff::Diff::Same(_) => true,
             _ => false,
         });
-        let split = kana.chars().collect();
+        let split: Vec<_> = kana.chars().collect();
+        let mut fails = Vec::new();
+
+        let mut kana_index = 0;
+        for it in &diff {
+            match it {
+                diff::Diff::Same(_) => {
+                    kana_index += 1;
+                }
+                diff::Diff::Insert(_) | diff::Diff::Change(_, _) => {
+                    fails.push(split[kana_index]);
+                    kana_index += 1;
+                }
+                diff::Diff::Delete(_) => {}
+            }
+        }
+
         Match {
             is_match,
             kana: String::from(kana),
@@ -47,6 +66,7 @@ impl Match {
             actual,
             split,
             diff,
+            fails,
         }
     }
 }

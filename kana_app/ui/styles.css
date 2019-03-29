@@ -258,6 +258,13 @@ h1 {
 	padding-left: 1vmin;
 }
 
+.summary .error_table {
+	display: inline-block;
+	font-size: 0.7em;
+	margin-right: 2vmin;
+}
+
+
 /*===================================================================*
  * GENERAL
  *===================================================================*/

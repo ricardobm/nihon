@@ -24,8 +24,11 @@
                 chars_done: 0,
                 answer_time: 0,
 
-                // Failures:
+                // Diff for last submitted word.
                 submitted: null,
+
+                // Map of error counts for each kana character.
+                errors: {},
             },
 
             paused: false,
@@ -89,6 +92,22 @@
                 }
                 return emoji;
             },
+
+            error_table: function() {
+                let errs = this.model.errors || {};
+                let table = [];
+                for (let k in errs) {
+                    table.push({ kana: k, count: errs[k] });
+                }
+                table.sort(function(a, b) {
+                    if (a.count != b.count) {
+                        return b.count - a.count;
+                    } else {
+                        return a.kana.localeCompare(b.kana);
+                    }
+                });
+                return table;
+            }
         },
 
         template: [
@@ -148,6 +167,13 @@
             '            <hr/>',
             '            <p>',
             '                Completed in <span v-html="answer_time_text"></span>.',
+            '            </p>',
+            '            <hr v-if="model.misses"/>',
+            '            <p  v-if="model.misses">',
+            '                <span class="error_table">Mistakes:</span>',
+            '                <span v-for="it in error_table" class="error_table">',
+            '                    <b class="japanese">{{it.kana}}</b> {{it.count}}',
+            '                </span>',
             '            </p>',
             '            <hr/>',
             '            <p style="font-size: 0.6em">',
