@@ -31,6 +31,8 @@ The project uses [Cargo](https://doc.rust-lang.org/cargo/),
 so as long as you have Rust properly setup, you can build it
 with `cargo build` and run with `cargo run`.
 
+See also: [technical details](#technical-details)
+
 ## Screenshots and features
 
 Choose the training set (katakana, hiragana or both) and
