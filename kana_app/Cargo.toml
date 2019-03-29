@@ -6,6 +6,7 @@ license = "MIT"
 description = "Hiragana and Katakana training app"
 repository = "https://github.com/ricardobm/nihon/"
 keywords = ["japanese", "kana", "hiragana", "katakana"]
+build = "build.rs"
 
 [[bin]]
 name = "kana"
@@ -19,3 +20,13 @@ web-view = "0.4.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rouille = "3.0.0"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[package.metadata.winres]
+OriginalFilename = "kana.exe"
+ProductName = "Kana"
+ProductVersion = "0.1.0"
+LegalCopyright = "(c) 2019 Ricardo B. Machado"
+FileDescription = "Hiragana and Katakana training app"
